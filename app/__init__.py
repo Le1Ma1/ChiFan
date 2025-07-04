@@ -1,7 +1,8 @@
 from flask import Flask
-from .utils.main import webhook_blueprint
+from app.main import webhook_blueprint
 
 def create_app():
     app = Flask(__name__)
-    app.register_blueprint(webhook_blueprint, url_prefix="/callback")
+    from app.main import bp as main_bp
+    app.register_blueprint(main_bp)
     return app
