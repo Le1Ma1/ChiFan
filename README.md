@@ -1,7 +1,7 @@
 # ChiFan
 
 解決「今天要吃什麼」的 LINE 機器人小幫手
-
+```
 ChiFan/
 │
 ├── .env.example        # 範例環境變數（存放API金鑰，不要推到公開repo）
@@ -34,3 +34,4 @@ ChiFan/
 │   └── 001_init.sql
 │
 └── tests/                # 未來可用於自動化測試的程式
+```
