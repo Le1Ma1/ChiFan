@@ -1,16 +1,18 @@
 from flask import Blueprint, request, abort
 from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, Mention, Mentionee
+from linebot.models import MessageEvent, TextMessage, TextSendMessage
+from linebot.models.mention import Mention
+from linebot.models.mentionee import Mentionee
 from linebot.exceptions import InvalidSignatureError
 import os
 from app.services.db import add_restaurant
 
-webhook_blueprint = Blueprint('webhook', __name__)
+bp = Blueprint('webhook', __name__)
 
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "測試用token"))
 handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET", "測試用secret"))
 
-@webhook_blueprint.route("/callback", methods=['POST'])
+@bp.route("/callback", methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)

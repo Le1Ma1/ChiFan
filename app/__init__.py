@@ -1,5 +1,5 @@
 from flask import Flask
-from app.main import webhook_blueprint
+from app.main import bp
 
 def create_app():
     app = Flask(__name__)
