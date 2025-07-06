@@ -1,5 +1,8 @@
+# app/services/db.py
+
 from supabase import create_client
 import os
+from datetime import datetime, timedelta, timezone
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -18,21 +21,57 @@ def get_restaurant_by_name(group_id, name):
         return res.data[0]
     return None
 
-def add_vote(session_id, vote_type, group_id, restaurant_id, user_id, value):
+def get_all_restaurants(group_id):
+    res = supabase.table("restaurants").select("*").eq("group_id", group_id).execute()
+    return res.data if hasattr(res, "data") else []
+
+def delete_restaurant(group_id, name):
+    res = supabase.table("restaurants").delete().eq("group_id", group_id).eq("name", name).execute()
+    return res
+
+def add_vote(session_id, vote_type, group_id, restaurant_id, user_id, value, name=None, expire_at=None, status="ongoing"):
     data = {
         "session_id": session_id,
         "vote_type": vote_type,
         "group_id": group_id,
         "restaurant_id": restaurant_id,
         "user_id": user_id,
-        "value": value
+        "value": value,
+        "status": status,
     }
+    if name:
+        data["name"] = name
+    if expire_at:
+        data["expire_at"] = expire_at
     return supabase.table("votes").insert(data).execute()
 
-def count_votes(session_id):
+def get_votes_by_session(session_id):
     res = supabase.table("votes").select("*").eq("session_id", session_id).execute()
     return res.data if hasattr(res, "data") else []
 
 def has_voted(session_id, user_id):
     res = supabase.table("votes").select("id").eq("session_id", session_id).eq("user_id", user_id).execute()
     return len(res.data) > 0 if hasattr(res, "data") else False
+
+def get_active_vote(group_id, vote_type):
+    res = supabase.table("votes").select("*") \
+        .eq("group_id", group_id) \
+        .eq("vote_type", vote_type) \
+        .eq("status", "ongoing") \
+        .execute()
+    return res.data if hasattr(res, "data") else []
+
+def finish_vote(session_id):
+    return supabase.table("votes").update({"status": "finished"}).eq("session_id", session_id).execute()
+
+def get_session_initiator(session_id):
+    res = supabase.table("votes").select("*").eq("session_id", session_id).order("id", desc=False).limit(1).execute()
+    if hasattr(res, "data") and res.data:
+        return res.data[0].get("user_id")
+    return None
+
+def get_vote_expire_at(session_id):
+    res = supabase.table("votes").select("expire_at").eq("session_id", session_id).limit(1).execute()
+    if hasattr(res, "data") and res.data:
+        return res.data[0].get("expire_at")
+    return None
