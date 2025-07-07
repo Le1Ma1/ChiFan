@@ -19,19 +19,17 @@ ChiFan/
 │   │
 │   ├── services/             # 後端邏輯/資料處理
 │   │   ├── db.py             # 與 Supabase（雲端資料庫）連線、CRUD
-│   │   ├── line_api.py       # 跟 LINE 官方API互動的封裝
 │   │   └── __init__.py       # 讓 services 變成 package , 可空
 │   │
 │   ├── utils/                # 工具函式與主 webhook（藍圖）邏輯
-│   │   ├── main.py           # webhook 接收事件與訊息分派（主控制邏輯）
 │   │   ├── commands.py       # 處理指令或訊息解析的函式
 │   │   └── __init__.py       # 讓 utils 變成 package , 可空
 │   │
-│   └── migrations/           # 資料表結構（SQL檔案）
-│       └── 001_init.sql      # 初始資料表結構建立語法
-│
-├── migrations/               # (備份) 起初開發測試用 , 當前主要使用雲端數據庫 Supabase
-│   └── 001_init.sql
+│   ├── main.py               # webhook 接收事件與訊息分派（主控制邏輯）
+│   ├── polling.py
+│   │
+│   └── migrations/           # (備份) 起初開發測試用 , 當前主要使用雲端數據庫 Supabase
+│       └── 001_init.sql      # APScheduler定時任務 , 投票自動結算
 │
 ├── init_db.py                # ※(本地測試用 , 已棄用) 早期用來初始化 SQLite 本地資料庫的腳本
 ├── chifan.db                 # ※(本地測試用 , 已棄用) 早期使用 SQLite 產生的資料庫檔案

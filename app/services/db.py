@@ -1,8 +1,5 @@
-# app/services/db.py
-
 from supabase import create_client
 import os
-from datetime import datetime, timedelta, timezone
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -46,12 +43,25 @@ def add_vote(session_id, vote_type, group_id, restaurant_id, user_id, value, nam
     return supabase.table("votes").insert(data).execute()
 
 def get_votes_by_session(session_id):
-    res = supabase.table("votes").select("*").eq("session_id", session_id).execute()
-    return res.data if hasattr(res, "data") else []
+    res = supabase.table("votes").select("*")\
+        .eq("session_id", session_id)\
+        .execute()
+    if hasattr(res, "data") and res.data:
+        # 只回傳有投票的
+        return [r for r in res.data if r.get("value") is not None]
+    return []
 
 def has_voted(session_id, user_id):
-    res = supabase.table("votes").select("id").eq("session_id", session_id).eq("user_id", user_id).execute()
-    return len(res.data) > 0 if hasattr(res, "data") else False
+    res = supabase.table("votes").select("id,value")\
+        .eq("session_id", session_id)\
+        .eq("user_id", user_id)\
+        .execute()
+    if hasattr(res, "data") and res.data:
+        # 只要有一筆 value 不是 None 就算已投過
+        for r in res.data:
+            if r.get("value") is not None:
+                return True
+    return False
 
 def get_active_vote(group_id, vote_type):
     res = supabase.table("votes").select("*") \
@@ -75,3 +85,10 @@ def get_vote_expire_at(session_id):
     if hasattr(res, "data") and res.data:
         return res.data[0].get("expire_at")
     return None
+
+def get_all_active_vote_groups(vote_type="choose"):
+    res = supabase.table("votes").select("group_id").eq("vote_type", vote_type).eq("status", "ongoing").execute()
+    if hasattr(res, "data") and res.data:
+        # 用 set 去除重複 group_id
+        return list(set(v["group_id"] for v in res.data))
+    return []
