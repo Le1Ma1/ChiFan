@@ -92,3 +92,29 @@ def get_all_active_vote_groups(vote_type="choose"):
         # 用 set 去除重複 group_id
         return list(set(v["group_id"] for v in res.data))
     return []
+
+def update_or_insert_vote(session_id, vote_type, group_id, restaurant_id, user_id, value, name=None, expire_at=None, status="ongoing"):
+    """
+    先查有沒有這個 session_id + user_id , 有就 update , 沒有就 insert
+    """
+    from datetime import datetime
+    res = supabase.table("votes").select("id").eq("session_id", session_id).eq("user_id", user_id).execute()
+    data = {
+        "session_id": session_id,
+        "vote_type": vote_type,
+        "group_id": group_id,
+        "restaurant_id": restaurant_id,
+        "user_id": user_id,
+        "value": value,
+        "status": status,
+    }
+    if name:
+        data["name"] = name
+    if expire_at:
+        data["expire_at"] = expire_at
+
+    if hasattr(res, "data") and res.data:
+        vote_id = res.data[0]["id"]
+        return supabase.table("votes").update(data).eq("id", vote_id).execute()
+    else:
+        return supabase.table("votes").insert(data).execute()

@@ -15,6 +15,9 @@ ChiFan/
 │   ├── flex/                 # Flex Message 樣板與回傳生成
 │   │   ├── list_carousel.py  # 多店家列表 Carousel Flex 樣板
 │   │   ├── vote_card.py      # 投票卡片 Flex 樣板
+│   │   ├── choose_flex.py      
+│   │   ├── main_menu.py      
+│   │   ├── tiebreak_flex.py      
 │   │   └── __init__.py       # 讓 flex 變成 package , 可空
 │   │
 │   ├── services/             # 後端邏輯/資料處理
