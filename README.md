@@ -15,9 +15,9 @@ ChiFan/
 │   ├── flex/                 # Flex Message 樣板與回傳生成
 │   │   ├── list_carousel.py  # 多店家列表 Carousel Flex 樣板
 │   │   ├── vote_card.py      # 投票卡片 Flex 樣板
-│   │   ├── choose_flex.py      
-│   │   ├── main_menu.py      
-│   │   ├── tiebreak_flex.py      
+│   │   ├── choose_flex.py    # 餐廳選擇投票用 Flex Message 產生器（橫滑選單、投票時限、隨機投票卡片等）
+│   │   ├── main_menu.py      # 機器人主操作選單的 Flex Message 產生器（主要用於 /menu 指令一鍵叫出所有操作按鈕
+│   │   ├── tiebreak_flex.py  # 平票決選專用的 Flex Message 產生器（私訊發起人平票決定餐廳或隨機決選   
 │   │   └── __init__.py       # 讓 flex 變成 package , 可空
 │   │
 │   ├── services/             # 後端邏輯/資料處理
