@@ -1,15 +1,13 @@
 from app.flex.rank_card import make_top3_flex, make_topuser_flex
 from app.services.db import get_all_restaurants
-from app.flex.main_menu import make_main_menu_flex 
-from app.flex.list_carousel import make_del_carousel     
+from app.flex.main_menu import make_main_menu_flex
+from app.flex.list_carousel import make_del_carousel
 from app.services.vote_service import VoteService
 from flask import Blueprint, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.models import ImageSendMessage, MessageEvent, TextMessage, TextSendMessage, PostbackEvent, FlexSendMessage
 from linebot.exceptions import InvalidSignatureError
 import os
-
-from app.services.vote_service import VoteService
 
 bp = Blueprint('webhook', __name__)
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
@@ -28,12 +26,13 @@ def callback():
 from app.flex.intro_card import make_intro_card
 from app.flex.help_card import make_help_card
 from app.flex.contact_card import make_contact_card
-from linebot.models import FlexSendMessage
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
-    group_id = event.source.group_id if event.source.type == "group" else None
+    source = event.source
+    group_id = getattr(source, "group_id", None)
+    user_id = getattr(source, "user_id", None)
 
     # 一對一（private chat）
     if not group_id:
@@ -62,8 +61,7 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, messages)
             return
         else:
-            # 預設回 intro_card 或歡迎訊息
-            line_bot_api.reply_message(event.reply_token, FlexSendMessage(...))
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="主選單", contents=make_intro_card()))
         return
 
     # ======= 群組功能 =======
@@ -73,23 +71,21 @@ def handle_message(event):
             event.reply_token,
             FlexSendMessage(alt_text="主選單", contents=flex)
         )
-        return  
+        return
 
     if text.startswith("/add "):
         VoteService.start_add_vote(event, group_id, user_id, text, line_bot_api)
     elif text.startswith("/del"):
         VoteService.start_del_vote(event, group_id, user_id, text, line_bot_api)
     elif text.startswith("/choose"):
-        # 設定測試時長為 1 分鐘（正式用 30）
         VoteService.start_choose_vote(event, group_id, user_id, line_bot_api, duration_min=1)
     elif text.startswith("/vote"):
         parts = text.split()
         if len(parts) == 3:
-            vote_type = parts[1].lower()  # add / del / choose
+            vote_type = parts[1].lower()
             vote_value = parts[2]
             VoteService.cast_vote(event, group_id, user_id, vote_type, vote_value, line_bot_api)
         else:
-            # 引導用戶新格式，並保留原先自動分流（短期過渡）
             reply = "請用 `/vote 類型 參數`，例如 `/vote add 1`、`/vote choose 2`、`/vote del 1`"
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply))
     elif text.startswith("/endvote"):
@@ -109,13 +105,12 @@ def handle_postback(event):
     menu_action = params.get("menu")
     vote_type = params.get("vote")
     session_id = params.get("session")
-    user_id = event.source.user_id
-    group_id = event.source.group_id if event.source.type == "group" else None
+    user_id = getattr(event.source, "user_id", None)
+    group_id = getattr(event.source, "group_id", None)
     index = params.get("index")
     value = params.get("value")
 
     if action == "top3":
-        # 測試用：假資料，你之後可接 DB 資料
         top3 = [
             {"name": "八方雲集", "votes": 12},
             {"name": "麥當勞", "votes": 8},
@@ -129,7 +124,6 @@ def handle_postback(event):
         return
 
     if action == "topuser":
-        # 測試用：假資料
         topuser = {
             "name": "W.FTX",
             "count": 10,
@@ -144,11 +138,9 @@ def handle_postback(event):
 
     # === 主選單操作 ===
     if menu_action == "choose":
-        # 直接進入 /choose 流程
-        VoteService.start_choose_vote(event, group_id, user_id, line_bot_api, duration_min=30)  # 或自訂分鐘
+        VoteService.start_choose_vote(event, group_id, user_id, line_bot_api, duration_min=30)
         return
     elif menu_action == "del":
-        # 推出所有餐廳列表供用戶點擊刪除
         restaurants = get_all_restaurants(group_id)
         if not restaurants:
             line_bot_api.reply_message(event.reply_token, TextSendMessage(text="目前清單沒有餐廳可刪除"))
@@ -159,7 +151,7 @@ def handle_postback(event):
             FlexSendMessage(alt_text="刪除餐廳", contents=flex)
         )
         return
-    
+
     if params.get("tiebreak") and params.get("winner"):
         session_id = params["tiebreak"]
         winner = params["winner"]
@@ -167,12 +159,11 @@ def handle_postback(event):
         return
 
     if vote_type == "choose":
-        VoteService.cast_choose_postback(event, group_id, user_id   , session_id, index, line_bot_api)
+        VoteService.cast_choose_postback(event, group_id, user_id, session_id, index, line_bot_api)
     else:
         VoteService.cast_vote_postback(event, group_id, user_id, vote_type, value, session_id, line_bot_api)
-    
+
     del_name = params.get("name")
     if vote_type == "del" and del_name and session_id == "menu":
-        # 直接啟動刪除餐廳投票流程
         VoteService.start_del_vote(event, group_id, user_id, f"/del {del_name}", line_bot_api)
         return
