@@ -1,3 +1,4 @@
+from app.flex.donate_card import make_donate_card
 from app.flex.rank_card import make_top3_flex, make_topuser_flex
 from app.services.db import get_all_restaurants
 from app.flex.main_menu import make_main_menu_flex
@@ -49,16 +50,10 @@ def handle_message(event):
             line_bot_api.reply_message(event.reply_token, TextSendMessage("請將我邀請進群組發起投票功能！"))
             return
         elif text == "助原創一臂之力":
-            messages = [
-                ImageSendMessage(
-                    original_content_url="https://i.postimg.cc/GhNYPv3W/USDT-QR.png",
-                    preview_image_url="https://i.postimg.cc/GhNYPv3W/USDT-QR.png"
-                ),
-                TextSendMessage(
-                    "USDT (TRC-20) 地址：\nTUmegztKiXNjhmifi7wJ8SdMkowY2s7Avw"
-                )
-            ]
-            line_bot_api.reply_message(event.reply_token, messages)
+            line_bot_api.reply_message(
+                event.reply_token,
+                FlexSendMessage(alt_text="支持開發", contents=make_donate_card())
+            )
             return
         else:
             line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="主選單", contents=make_intro_card()))
