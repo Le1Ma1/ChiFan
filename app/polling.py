@@ -2,11 +2,13 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.services.db import get_all_active_vote_groups, get_active_vote, get_vote_expire_at, get_votes_with_tiebreak_timeout
 from app.services.vote_service import VoteService
 import os
+from datetime import datetime, timezone
 from linebot import LineBotApi
 
 def check_expired_votes():
     line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
-
+    now = datetime.now(timezone.utc)
+    print(f"[Polling] {now} 進行輪詢檢查")
     # 1. 處理選餐廳投票
     group_ids_choose = get_all_active_vote_groups("choose")
     for group_id in group_ids_choose:
