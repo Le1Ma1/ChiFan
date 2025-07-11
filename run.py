@@ -1,11 +1,7 @@
 from dotenv import load_dotenv
-from app.polling import start_polling_job
-
 load_dotenv()
-start_polling_job()
 
 from app import create_app
-
 app = create_app()
 
 if __name__ == "__main__":
