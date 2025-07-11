@@ -51,6 +51,6 @@ def check_tiebreak_timeout(line_bot_api):
 
 def start_polling_job():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(check_expired_votes, 'interval', seconds=15)
+    scheduler.add_job(check_expired_votes, 'interval', seconds=1)
     scheduler.start()
     print("[Polling] APScheduler 啟動成功")
