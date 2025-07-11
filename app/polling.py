@@ -1,5 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
-from app.services.db import get_all_active_vote_groups, get_active_vote, get_vote_expire_at
+from app.services.db import get_all_active_vote_groups, get_active_vote, get_vote_expire_at, get_votes_with_tiebreak_timeout
 from app.services.vote_service import VoteService
 import os
 from linebot import LineBotApi
@@ -40,8 +40,15 @@ def check_expired_votes():
                 print(f"[Polling] 結算過期新增餐廳投票 {session_id}")
                 # 你若已有自動結束新增餐廳投票的 finish_add_vote，可在這裡呼叫
 
+def check_tiebreak_timeout(line_bot_api):
+    # 查所有 tiebreak_expire_at 已過期且未決定的 session
+    sessions = get_votes_with_tiebreak_timeout()
+    for session in sessions:
+        session_id = session["session_id"]
+        VoteService.finalize_tiebreak(session_id, "random", line_bot_api)
+
 def start_polling_job():
     scheduler = BackgroundScheduler()
-    scheduler.add_job(check_expired_votes, 'interval', seconds=30)  # 每 30 秒掃一次
+    scheduler.add_job(check_expired_votes, 'interval', seconds=15) 
     scheduler.start()
     print("[Polling] APScheduler 啟動成功")

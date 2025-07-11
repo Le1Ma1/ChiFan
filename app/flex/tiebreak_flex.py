@@ -1,25 +1,24 @@
-def make_tiebreak_flex(winner_names, session_id):
-    buttons = []
-    for name in winner_names:
-        buttons.append({
+def make_tiebreak_flex(winners_name, session_id):
+    actions = []
+    for name in winners_name:
+        actions.append({
             "type": "button",
             "style": "primary",
-            "margin": "md",
+            "color": "#00B900",
             "action": {
                 "type": "postback",
                 "label": name,
-                "data": f"tiebreak={session_id}&winner={name}"
+                "data": f"action=tiebreak&sid={session_id}&win={name}"
             }
         })
-    # 隨機決定按鈕
-    buttons.append({
+    # 加一個隨機
+    actions.append({
         "type": "button",
         "style": "secondary",
-        "margin": "md",
         "action": {
             "type": "postback",
-            "label": "隨機決定",
-            "data": f"tiebreak={session_id}&winner=random"
+            "label": "隨機選擇",
+            "data": f"action=tiebreak&sid={session_id}&win=random"
         }
     })
     return {
@@ -27,9 +26,22 @@ def make_tiebreak_flex(winner_names, session_id):
         "body": {
             "type": "box",
             "layout": "vertical",
+            "spacing": "md",
             "contents": [
-                {"type": "text", "text": "票選平手決選", "weight": "bold", "size": "xl", "margin": "md"},
-                {"type": "text", "text": "請選擇最終決策的餐廳，或讓系統隨機決定", "size": "sm", "margin": "md"},
-            ] + buttons
+                {
+                    "type": "text",
+                    "text": "平票決選",
+                    "weight": "bold",
+                    "size": "xl"
+                },
+                {
+                    "type": "text",
+                    "text": "請於 5 分鐘內選擇最終餐廳 , 逾時將自動隨機",
+                    "size": "sm",
+                    "color": "#555555",
+                    "wrap": True,
+                    "margin": "md"
+                }
+            ] + actions
         }
     }

@@ -1,10 +1,11 @@
+from app.flex.rank_card import make_top3_flex, make_topuser_flex
 from app.services.db import get_all_restaurants
 from app.flex.main_menu import make_main_menu_flex 
 from app.flex.list_carousel import make_del_carousel     
 from app.services.vote_service import VoteService
 from flask import Blueprint, request, abort
 from linebot import LineBotApi, WebhookHandler
-from linebot.models import MessageEvent, TextMessage, TextSendMessage, PostbackEvent, FlexSendMessage
+from linebot.models import ImageSendMessage, MessageEvent, TextMessage, TextSendMessage, PostbackEvent, FlexSendMessage
 from linebot.exceptions import InvalidSignatureError
 import os
 
@@ -24,16 +25,48 @@ def callback():
         abort(400)
     return 'OK'
 
+from app.flex.intro_card import make_intro_card
+from app.flex.help_card import make_help_card
+from app.flex.contact_card import make_contact_card
+from linebot.models import FlexSendMessage
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     text = event.message.text.strip()
-    user_id = event.source.user_id
     group_id = event.source.group_id if event.source.type == "group" else None
-  
+
+    # 一對一（private chat）
     if not group_id:
-        line_bot_api.reply_message(event.reply_token, TextSendMessage(text="請在群組內使用本 Bot"))
+        if text == "主選單":
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="主選單", contents=make_intro_card()))
+            return
+        elif text == "你能為我做甚麼 ?":
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="功能說明", contents=make_help_card()))
+            return
+        elif text == "聯繫方式":
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(alt_text="聯絡作者", contents=make_contact_card()))
+            return
+        elif text == "發起投票":
+            line_bot_api.reply_message(event.reply_token, TextSendMessage("請將我邀請進群組發起投票功能！"))
+            return
+        elif text == "助原創一臂之力":
+            messages = [
+                ImageSendMessage(
+                    original_content_url="https://i.postimg.cc/GhNYPv3W/USDT-QR.png",
+                    preview_image_url="https://i.postimg.cc/GhNYPv3W/USDT-QR.png"
+                ),
+                TextSendMessage(
+                    "USDT (TRC-20) 地址：\nTUmegztKiXNjhmifi7wJ8SdMkowY2s7Avw"
+                )
+            ]
+            line_bot_api.reply_message(event.reply_token, messages)
+            return
+        else:
+            # 預設回 intro_card 或歡迎訊息
+            line_bot_api.reply_message(event.reply_token, FlexSendMessage(...))
         return
 
+    # ======= 群組功能 =======
     if text == "/menu":
         flex = make_main_menu_flex()
         line_bot_api.reply_message(
@@ -71,7 +104,8 @@ def handle_message(event):
 @handler.add(PostbackEvent)
 def handle_postback(event):
     data = event.postback.data
-    params = dict(item.split('=') for item in data.split('&'))
+    params = dict(item.split('=') for item in data.split('&') if '=' in item)
+    action = params.get("action")
     menu_action = params.get("menu")
     vote_type = params.get("vote")
     session_id = params.get("session")
@@ -80,10 +114,38 @@ def handle_postback(event):
     index = params.get("index")
     value = params.get("value")
 
+    if action == "top3":
+        # 測試用：假資料，你之後可接 DB 資料
+        top3 = [
+            {"name": "八方雲集", "votes": 12},
+            {"name": "麥當勞", "votes": 8},
+            {"name": "燒肉丼飯", "votes": 6}
+        ]
+        flex = make_top3_flex(top3)
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text="人氣排行", contents=flex)
+        )
+        return
+
+    if action == "topuser":
+        # 測試用：假資料
+        topuser = {
+            "name": "W.FTX",
+            "count": 10,
+            "desc": "本月投票王"
+        }
+        flex = make_topuser_flex(topuser)
+        line_bot_api.reply_message(
+            event.reply_token,
+            FlexSendMessage(alt_text="貢獻榜", contents=flex)
+        )
+        return
+
     # === 主選單操作 ===
     if menu_action == "choose":
         # 直接進入 /choose 流程
-        VoteService.start_choose_vote(event, group_id, user_id, line_bot_api, duration_min=1)  # 或自訂分鐘
+        VoteService.start_choose_vote(event, group_id, user_id, line_bot_api, duration_min=30)  # 或自訂分鐘
         return
     elif menu_action == "del":
         # 推出所有餐廳列表供用戶點擊刪除

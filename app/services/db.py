@@ -118,3 +118,15 @@ def update_or_insert_vote(session_id, vote_type, group_id, restaurant_id, user_i
         return supabase.table("votes").update(data).eq("id", vote_id).execute()
     else:
         return supabase.table("votes").insert(data).execute()
+    
+def set_tiebreak_expire_at(session_id, tiebreak_expire_at):
+    supabase.table("votes").update({"tiebreak_expire_at": tiebreak_expire_at}).eq("session_id", session_id).execute()
+
+def get_votes_with_tiebreak_timeout():
+    now = datetime.now(timezone.utc).isoformat()
+    res = supabase.table("votes").select("*").neq("tiebreak_expire_at", None).lt("tiebreak_expire_at", now).eq("status", "finished").execute()
+    return res.data if hasattr(res, "data") and res.data else []
+
+def is_group_whitelisted(group_id):
+    res = supabase.table("group_whitelist").select("*").eq("group_id", group_id).execute()
+    return bool(getattr(res, "data", None))
