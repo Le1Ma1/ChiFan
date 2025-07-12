@@ -40,7 +40,7 @@ def check_expired_votes():
             expire_at = get_vote_expire_at(session_id)
             if VoteService.session_is_expired(expire_at):
                 print(f"[Polling] 結算過期新增餐廳投票 {session_id}")
-                # 你若已有自動結束新增餐廳投票的 finish_add_vote，可在這裡呼叫
+                VoteService.finish_del_vote(group_id, line_bot_api)
 
 def check_tiebreak_timeout(line_bot_api):
     # 查所有 tiebreak_expire_at 已過期且未決定的 session
