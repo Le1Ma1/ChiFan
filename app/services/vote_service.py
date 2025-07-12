@@ -79,6 +79,11 @@ class VoteService:
     def start_add_vote(cls, event, group_id, user_id, text, line_bot_api):
         name = text[5:].strip()
         restaurants = get_all_restaurants(group_id)
+        try:
+            profile = line_bot_api.get_group_member_profile(group_id, user_id)
+            user_name = profile.display_name
+        except Exception:
+            user_name = "某位用戶"
         if len(restaurants) >= 13:
             line_bot_api.reply_message(
                 event.reply_token,
@@ -91,7 +96,7 @@ class VoteService:
             return
         # 幽默提示
         if len(restaurants) >= 2:
-            msg = f"{name} 想為今天吃什麼增添一點選擇障礙 😏"
+            msg = f"{user_name} 想為今天吃什麼增添一點選擇障礙 😏"
             line_bot_api.push_message(group_id, TextSendMessage(text=msg))
 
         active = get_active_vote(group_id, "add")
